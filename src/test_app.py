@@ -86,3 +86,59 @@ def test_signup_invalid_email():
     # For now, this passes as is.
     response = client.post("/activities/Chess Club/signup?email=invalid")
     assert response.status_code == 200  # Would be 400 if validation added
+
+def test_unregister_participant():
+    """Test that a participant can be unregistered from an activity."""
+    email = "unregister_test@mergington.edu"
+    
+    # First, sign up the participant
+    signup_response = client.post(f"/activities/Drama Club/signup?email={email}")
+    assert signup_response.status_code == 200
+    
+    # Verify they were added
+    activities_before = client.get("/activities").json()
+    assert email in activities_before["Drama Club"]["participants"]
+    
+    # Now unregister them
+    unregister_response = client.delete(f"/activities/Drama Club/signup?email={email}")
+    assert unregister_response.status_code == 200
+    assert "Unregistered" in unregister_response.json()["message"]
+    
+    # Verify they were removed
+    activities_after = client.get("/activities").json()
+    assert email not in activities_after["Drama Club"]["participants"]
+
+def test_unregister_nonexistent_participant():
+    """Test that unregistering a participant not signed up returns 400."""
+    response = client.delete("/activities/Science Club/signup?email=notexist@mergington.edu")
+    assert response.status_code == 400
+    assert "not signed up" in response.json()["detail"]
+
+def test_unregister_from_nonexistent_activity():
+    """Test that unregistering from a non-existent activity returns 404."""
+    response = client.delete("/activities/Fake Activity/signup?email=test@mergington.edu")
+    assert response.status_code == 404
+    assert "Activity not found" in response.json()["detail"]
+
+def test_unregister_updates_participant_count():
+    """Test that participant count decreases after unregistering."""
+    email = "count_test@mergington.edu"
+    activity_name = "Art Studio"
+    
+    # Get initial count
+    initial_activities = client.get("/activities").json()
+    initial_count = len(initial_activities[activity_name]["participants"])
+    
+    # Sign up
+    client.post(f"/activities/{activity_name}/signup?email={email}")
+    
+    # Verify count increased
+    after_signup = client.get("/activities").json()
+    assert len(after_signup[activity_name]["participants"]) == initial_count + 1
+    
+    # Unregister
+    client.delete(f"/activities/{activity_name}/signup?email={email}")
+    
+    # Verify count returned to original
+    after_unregister = client.get("/activities").json()
+    assert len(after_unregister[activity_name]["participants"]) == initial_count
