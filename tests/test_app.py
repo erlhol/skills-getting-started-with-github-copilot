@@ -1,8 +1,6 @@
-from turtle import up
-
 import pytest
 from fastapi.testclient import TestClient
-from app import app, root
+from src.app import app
 
 client = TestClient(app)
 
@@ -58,13 +56,6 @@ def test_signup_activity_full():
     # But since it's in-memory, perhaps add a test activity with small max.
     # For now, this is a placeholder; implement the check in app.py first.
     pass  # Replace with actual test once max check is added
-
-#def test_root_redirect():
-#    """Test that root path redirects to static index."""
-    
-#    response = client.get("/")
-#    assert response.status_code == 307  # Redirect
-#    assert response.headers["location"] == "/static/index.html"
 
 def test_signup_multiple_activities():
     """Test that a student can sign up for multiple different activities."""
